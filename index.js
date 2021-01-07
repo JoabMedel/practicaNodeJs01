@@ -1,20 +1,38 @@
 let http = require("http");
+let fs = require("fs");
 
 http.createServer((request,response) => {
     //dentro se escribe toda la logica al momento de hacer una peticion
-        if (err) return done(err)
-        if(request.url === "/contacto"){
-            response.setHeader("Content-Type", "text/html; charset=utf-8");
-            response.write("<h1>Contacto</h1>");
-            response.end();
-        }else if(request.url === "/"){
-            response.setHeader("Content-Type", "text/html; charset=utf-8");
-            response.write("<h1>pagina de inicio</h1>");
-            response.end();
-        }else{
-            response.setHeader("Content-Type", "text/html; charset=utf-8");
-            response.write("<h1>404</h1>");
+    response.setHeader("Content-Type", "text/html; charset=utf-8");
+    switch(request.url){
+        case "/contacto":
+            readFile("./contacto.html", response);
+            break;
+        case "/":
+            readFile("./index.html", response);
+            break;
+        case "/nosotros":
+            readFile("./about.html", response);
+            break;
+        case "/proyectos":
+            readFile("./proyects.html", response);
+            break;
+        case "/favicon.ico":
+            response.setHeader("Content-Type", "image/x-icon");
+            readFile("./favicon.ico", response);
+            break;
+        default:
+            response.statusCode = 404;
+            readFile("./404.html", response);
+            break;
+    }
+}).listen(8080)
+
+const readFile = (path, response) => {
+    fs.readFile(path,(error,content) => {
+        if(!error){
+            response.write(content);
             response.end();
         }
-        // respond to request
-}).listen(8080)
+    });
+}
