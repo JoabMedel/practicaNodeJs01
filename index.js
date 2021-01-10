@@ -1,109 +1,59 @@
-
 //todos estos son mis modulos de node.
 
-let http = require("http");
 let fs = require("fs");
+let express = require("express");
+let path = require("path");
+let app = express();
+
+//Tenemos que hacer un app get por cada ruta que estemos manejando.
+//El orden que tenemos para los app get es de arriba a abajo lo que es el filtrado.
+
+
+//Middleware.
+
+//Vamos a crear una carpeta public donde almacenaremos todos nuestros archivos estatico.
+//con la siguiente funcion "app.use(express.static("public"))" vamos a servir todos nuestros
+//archivos estaticos para que sea visible la configuracion.
+//Todo lo que este afuera de public no se va a poder leer
+
+app.use(express.static("public"));
+app.use(express.urlencoded({extended: false}));//Este middleware nos sirve para procesar los datos
+//que son enviados a traves del formulario y va a colocar los datos transformados sobre request.body
+
+//app.get actua sobre aquellas peticiones que sean de tipo "GET" unicamente con tipo get.
+app.get("/", (request,response) => {
+    response.sendFile(path.join(__dirname,"index.html"))
+});
+
+app.get("/contacto", (request,response) => {
+    response.sendFile(path.join(__dirname,"contacto.html"))
+});
+
+app.get("/nosotros", (request,response) => {
+    response.sendFile(path.join(__dirname,"about.html"))
+});
+
+app.get("/proyectos", (request,response) => {
+    response.sendFile(path.join(__dirname,"proyects.html"))
+});
+
+app.post("/usuarios", (request,response) => {
+    console.log(request.body)
+    fs.writeFile("usuarios.txt", JSON.stringify(request.body), (error) => {
+        if(error){
+            console.log(error);
+        }
+        response.redirect("/");
+    });
+});
+
+//app.use va a actuar sobre aquellas peticiones que sean de tipo "get,post,delte,put"
+app.use((request, response) => {
+    response.sendFile(path.join(__dirname,"404.html"));
+});
+
+app.listen(8080, () => {
+    console.log("servidor iniciado en el puerto 8080");
+})
+
 //path viene en node y nos sirve para manejar las rutas que tenemos en nuestro equipos
-let mime = require("mime");
-
-http.createServer((request,response) => {
-    //dentro se escribe toda la logica al momento de hacer una peticion
-    // response.setHeader("Content-Type", "text/html; charset=utf-8");
-    if(request.method === "GET"){
-        switch(request.url){
-            case "/contacto":
-                readFile("/contacto.html", response);
-                break;
-            case "/":
-                readFile("/index.html", response);
-                break;
-            case "/nosotros":
-                readFile("/about.html", response);
-                break;
-            case "/proyectos":
-                readFile("/proyects.html", response);
-                break;
-            case "/favicon.ico":
-                response.setHeader("Content-Type", "image/x-icon");
-                readFile("/favicon.ico", response);
-                break;
-            default:
-                readFile(request.url, response);
-                break;
-        }
-    }else if(request.method === "POST"){
-        switch(request.url){
-            case "/usuarios":
-                agregarUsuarios(request);
-                break;
-            default:
-                readFile(request.url, response);
-                break;
-        }
-    }
-}).listen(8080)
-
-const readFile = (url, response) => {
-    //__dirname es para definir rutas absolutas(ejemplo leer mi css o cualquier archivo)
-    let urlF = __dirname + url;
-    fs.readFile(urlF,(error,content) => {
-        if(!error){
-            // response.setHeader("Content-Type","text/css")
-            // setcontentType(path.extname(urlF),response);
-            response.setHeader("Content-Type", mime.getType(urlF));
-            response.end(content);
-        }else{
-            // tambien de esta manera -> response.statusCode = 404;
-            response.writeHead(404);
-            response.end("<h1>404</h1>");   
-        }
-    });
-}
-
-const agregarUsuarios = (request) => {
-    let data = '';
-
-    //cuando se esten recibiendo dartos
-    request.on('data', chunk => {
-        data += chunk;
-    });
-
-    //Cuando se terminen de procesar los datos
-    request.on('end',() => {
-        let datos = data.toString();
-        console.log("fin del stream");
-        //1er argumento -> la ruta del archivo en el que queremos escribir.
-        //se creara el archivo si no existe en la ruta especificada.
-        //2do argumento -> El conotenido que queremos escribir,
-        //3er argumrnto -> funcion de callback que nos "notificara" en caso de que haya un error al escribir
-        //en el archivo
-        console.log(datos.split("&"));
-        let user = {
-            name: datos.split("&")[0].split("=")[1],
-            lastename: datos.split("&")[1].split("=")[1],
-            email: datos.split("&")[2].split("=")[1],
-            password: datos.split("&")[3].split("=")[1],
-        }
-        fs.writeFile("usuarios2.txt",JSON.stringify(user), (error)=>{
-            if(error){
-                console.log(error);
-            }
-        })
-    });
-
-    //por si se llega a captar algun error al enviar los datos.
-    request.on('error', error => {
-        console.log(error)
-    })
-}
-//esto es para filtrar mis estilos de content type y aplicar segun el tipo
-
-//la siguiente funcion fue sustituida por "mime" para el filtrado de los content type
-
-// const setcontentType = (ext, response) => {
-//     if(ext === ".css") {
-//         response.setHeader("Content-Type","text/css");
-//     }else if(ext === ".html"){
-//         response.setHeader("Content-Type","text/html");
-//     }
-// }
