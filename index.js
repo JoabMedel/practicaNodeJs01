@@ -34,7 +34,7 @@ http.createServer((request,response) => {
     }else if(request.method === "POST"){
         switch(request.url){
             case "/usuarios":
-                agregarUsuarios(request);
+                agregarUsuarios(request,response);
                 break;
             default:
                 readFile(request.url, response);
@@ -60,7 +60,7 @@ const readFile = (url, response) => {
     });
 }
 
-const agregarUsuarios = (request) => {
+const agregarUsuarios = (request,response) => {
     let data = '';
 
     //cuando se esten recibiendo dartos
@@ -87,6 +87,15 @@ const agregarUsuarios = (request) => {
         fs.writeFile("usuarios2.txt",JSON.stringify(user), (error)=>{
             if(error){
                 console.log(error);
+            }else{
+                //vamos a anadir a la cabecera la locacion donde sera el reedireccionamiento en este caso
+                //sera a "index.htm" o "/" que es por defecto
+                response.setHeader("Location", "/");
+                //agregamos el status code 302 para que se haga la reedireccion debido a que es el status que se
+                //requiere de otra forma al no indicarselo el status sera 200 pero no se reedireccionara a aindex.
+                response.statusCode = 302;
+                //indicamos el .end() para finalizar la respuesta y que no se quede colgado nuestro sistema.
+                response.end();
             }
         })
     });
